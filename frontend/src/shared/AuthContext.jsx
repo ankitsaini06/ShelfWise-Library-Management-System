@@ -7,7 +7,7 @@ import React, {
 
 const AuthContext = createContext();
 
-const API_BASE_URL = "http://localhost:5000/api/auth";
+const API_BASE_URL = "https://shelfwise-library-management-system.onrender.com/api/auth";
 
 const SESSION_KEY = "library_session";
 const TOKEN_KEY = "library_token";
@@ -37,8 +37,8 @@ const mapUserToFrontend = (user) => ({
   department: user.department || "",
   stream: user.stream || "",
   semester: user.semester || "",
-  academicYear: user.year || "",
-  rollNumber: user.rollNo || "",
+  academicYear: user.academicYear || "",
+  rollNumber: user.rollNumber || "",
 });
 
 export const AuthProvider = ({ children }) => {
@@ -438,34 +438,70 @@ export const AuthProvider = ({ children }) => {
     );
   };
 
-  const updateProfile = (updates) => {
-    setCurrentUser((current) => {
-      if (!current) return current;
+const updateProfile = async (updates) => {
+  try {
+    const token = localStorage.getItem(TOKEN_KEY);
 
-      const updatedUser = {
-        ...current,
-        ...updates,
+    const response = await fetch(
+      `${API_BASE_URL}/update-profile`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: updates.name,
+          email: updates.email,
+          phone: updates.phone,
+          department: updates.department,
+          stream: updates.stream,
+          semester: updates.semester,
+          academicYear: updates.academicYear,
+          rollNumber: updates.rollNumber,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return {
+        ok: false,
+        error: data.message || "Profile update failed.",
       };
+    }
 
-      localStorage.setItem(
-        SESSION_KEY,
-        JSON.stringify(updatedUser)
-      );
+    const mappedUser = mapUserToFrontend(data.user);
 
-      return updatedUser;
-    });
+    setCurrentUser(mappedUser);
+
+    localStorage.setItem(
+      SESSION_KEY,
+      JSON.stringify(mappedUser)
+    );
 
     setAccounts((currentAccounts) =>
       currentAccounts.map((account) =>
-        account.email === currentUser?.email
-          ? {
-              ...account,
-              ...updates,
-            }
+        account.email === mappedUser.email
+          ? mappedUser
           : account
       )
     );
-  };
+
+    return {
+      ok: true,
+      user: mappedUser,
+    };
+  } catch (error) {
+    console.error("Update Profile Error:", error);
+
+    return {
+      ok: false,
+      error: error.message,
+    };
+  }
+};
     const value = {
     ready,
     currentUser,
