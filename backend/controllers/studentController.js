@@ -1,6 +1,5 @@
 import User from "../models/User.js";
 
-// Search student by roll number
 export async function searchStudentsByRoll(req, res) {
   try {
     const roll = String(req.query.roll || "").trim();
@@ -17,9 +16,11 @@ export async function searchStudentsByRoll(req, res) {
     const students = await User.find({
       role: "user",
       isProfileComplete: true,
-      rollNo: { $regex: rollRegex },
+      rollNumber: { $regex: rollRegex },
     })
-      .select("name email department stream semester year rollNo")
+      .select(
+        "name email department stream semester academicYear rollNumber"
+      )
       .limit(12);
 
     const mappedStudents = students.map((student) => ({
@@ -27,9 +28,9 @@ export async function searchStudentsByRoll(req, res) {
       email: student.email,
       department: student.department || "",
       stream: student.stream || "",
-      academicYear: student.year || "",
+      academicYear: student.academicYear || "",
       semester: student.semester || "",
-      rollNumber: student.rollNo || "",
+      rollNumber: student.rollNumber || "",
     }));
 
     return res.status(200).json({
@@ -42,7 +43,7 @@ export async function searchStudentsByRoll(req, res) {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error.message
+      error: error.message,
     });
   }
 }

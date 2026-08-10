@@ -9,7 +9,6 @@ const issueSchema = new mongoose.Schema({
   bookCode: {
     type: String,
     required: true,
-    unique: true,
   },
 
   title: {
